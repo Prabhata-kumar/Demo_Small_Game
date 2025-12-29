@@ -240,10 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2542afda297a0bb4395d41dd0ee1b090, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  crossImage: {fileID: 2869368218529761392}
-  crownImage: {fileID: 3184785064886570033}
-  crossSprite: {fileID: 0}
-  crownSprite: {fileID: 0}
-  crossNormalColor: {r: 1, g: 1, b: 1, a: 1}
-  crossWrongColor: {r: 1, g: 0, b: 0, a: 1}
+  crossObject: {fileID: 8590501761334686557}
+  crownObject: {fileID: 3395708274883611759}
   isCrown: 0
+  crownSprite: {fileID: 0}

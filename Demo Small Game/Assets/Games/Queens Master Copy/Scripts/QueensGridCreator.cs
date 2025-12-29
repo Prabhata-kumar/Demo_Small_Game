@@ -173,3 +173,11 @@ public class QueensGridCreator : MonoBehaviour
         }
     }
 }
+
+
+/*
+
+  [HideInInspector] public Image crownSprite;
+    crownSprite = crownObject.GetComponent<Image>();
+
+*/

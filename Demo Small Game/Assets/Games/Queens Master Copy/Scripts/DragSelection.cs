@@ -2,101 +2,133 @@
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DragSelection : MonoBehaviour, IPointerEnterHandler, IPointerDownHandler, IPointerClickHandler
+public class DragSelection : MonoBehaviour,
+    IPointerEnterHandler,
+    IPointerDownHandler,
+    IPointerClickHandler
 {
     [Header("UI References")]
-    public GameObject crossObject;   // The X child
-    public GameObject crownObject;   // The Crown child
+    public GameObject crossObject;   // X icon
+    public GameObject crownObject;   // Crown icon
 
-    [Header("Status")]
-    public bool isSelected = false;  // Is the X visible?
-    public bool isRevealed = false;  // Is the Crown visible?
-    public bool isCrown = false;     // Is this actually a correct spot?
+    [Header("Logic")]
+    public bool isCrown = false;     // Is this tile actually a crown?
 
-    private float lastClickTime;
-    private float doubleClickThreshold = 0.3f; // Adjust for "feel"
+    [Header("Cross Colors")]
+    public Color whiteCross = Color.white;
+    public Color redCross = Color.red;
 
-    [HideInInspector]
-    public Image crownSprite;
+    private Image crossImage;
+
+    [HideInInspector] public Image crownSprite;
+
+    private bool isSelected = false; // Cross visible
+    private bool isRevealed = false; // Crown visible
+
+    private float lastClickTime = -1f;
+    private float doubleClickThreshold = 0.3f;
 
     void Awake()
     {
-        // Auto-assign children if not set in inspector
-        if (transform.childCount >= 2)
-        {
+        // Auto assign children if not set
+        if (crossObject == null && transform.childCount > 0)
             crossObject = transform.GetChild(0).gameObject;
+
+        if (crownObject == null && transform.childCount > 1)
             crownObject = transform.GetChild(1).gameObject;
-        }
+
+        crossImage = crossObject.GetComponent<Image>();
+        crownSprite = crownObject.GetComponent<Image>();
 
         crossObject.SetActive(false);
         crownObject.SetActive(false);
-
-        crownSprite = crownObject.GetComponent<Image>();
     }
 
-    // SMOOTH DRAGGING: Highlighting with X
+    // =========================
+    // DRAG → WHITE CROSS ONLY
+    // =========================
     public void OnPointerEnter(PointerEventData eventData)
     {
-        // If we are dragging/holding mouse, and it's not a crown yet
         if ((eventData.dragging || Input.GetMouseButton(0)) && !isRevealed)
         {
-            SetCross(true);
+            ShowWhiteCross();
         }
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Required to catch the click
+        // Required for click timing
     }
 
+    // =========================
+    // CLICK LOGIC
+    // =========================
     public void OnPointerClick(PointerEventData eventData)
     {
         float timeSinceLastClick = Time.time - lastClickTime;
 
-        if (timeSinceLastClick <= doubleClickThreshold && isCrown)
+        if (timeSinceLastClick <= doubleClickThreshold)
         {
-            // DOUBLE TAP: Reveal Crown
-            ToggleCrown();
-        }
-        else if (timeSinceLastClick <= doubleClickThreshold && !isCrown)
-        {
-            // Double click on non-crown does nothing
+            // DOUBLE TAP
+            if (isCrown)
+            {
+                ShowCrown();
+            }
+            else
+            {
+                ShowRedCross();
+            }
         }
         else
         {
-            // SINGLE TAP: Toggle Cross
+            // SINGLE TAP → TOGGLE WHITE CROSS
             if (!isRevealed)
             {
-                SetCross(!isSelected);
+                if (isSelected)
+                    HideCross();
+                else
+                    ShowWhiteCross();
             }
         }
 
         lastClickTime = Time.time;
     }
 
-    private void SetCross(bool state)
+    // =========================
+    // STATE FUNCTIONS
+    // =========================
+    void ShowWhiteCross()
     {
-        isSelected = state;
-        crossObject.SetActive(state);
+        isSelected = true;
+        isRevealed = false;
 
-        // If we turn on a cross, make sure crown is off
-        if (state)
-        {
-            isRevealed = false;
-            crownObject.SetActive(false);
-        }
+        crossImage.color = whiteCross;
+        crossObject.SetActive(true);
+        crownObject.SetActive(false);
     }
 
-    private void ToggleCrown()
+    void ShowRedCross()
     {
-        isRevealed = !isRevealed;
-        crownObject.SetActive(isRevealed);
+        isSelected = true;
+        isRevealed = true;
 
-        // If we turn on a crown, the cross MUST be hidden
-        if (isRevealed)
-        {
-            isSelected = false;
-            crossObject.SetActive(false);
-        }
+        crossImage.color = redCross;
+        crossObject.SetActive(true);
+        crownObject.SetActive(false);
+    }
+
+    void HideCross()
+    {
+        isSelected = false;
+        crossObject.SetActive(false);
+    }
+
+    void ShowCrown()
+    {
+        isRevealed = true;
+        isSelected = false;
+
+        crownObject.SetActive(true);
+        crossObject.SetActive(false);
     }
 }
