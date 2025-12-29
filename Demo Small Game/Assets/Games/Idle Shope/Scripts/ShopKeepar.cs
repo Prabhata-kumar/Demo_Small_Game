@@ -1,30 +1,56 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
-public class ShopKeepar : MonoBehaviour
+public class ShopKeeper : MonoBehaviour
 {
-    public int count;
-    public List<AnimationClip> items;
-    public Animator animator;
-    // Start is called before the first frame update
-    void Start()
+    [Header("Item Animations")]
+    [SerializeField] private List<AnimationClip> items;
+
+    private Animator animator;
+    public int currentItemIndex = 0;
+
+    void Awake()
     {
         animator = GetComponentInChildren<Animator>();
+
+        if (animator == null)
+        {
+            Debug.LogError("Animator not found in children!");
+        }
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        HandleRunning();
+        HandleItemCycling();
+    }
+
+    // -----------------------------
+    // RUN / IDLE LOGIC
+    // -----------------------------
+    private void HandleRunning()
+    {
+        bool isRunning = Input.GetKey(KeyCode.Space);
+        animator.SetBool("run", isRunning);
+    }
+
+    // -----------------------------
+    // ITEM SHOWCASE LOGIC
+    // -----------------------------
+    private void HandleItemCycling()
+    {
+        if (!Input.GetMouseButtonDown(0))
+            return;
+
+        if (items == null || items.Count == 0)
         {
-            count++;
-            if(count > items.Count)
-            {
-                count = 0;
-            }
-                animator.Play(items[count % items.Count].name);
+            Debug.LogWarning("No item animations assigned!");
+            return;
         }
+
+        currentItemIndex = (currentItemIndex + 1) % items.Count;
+
+        animator.SetInteger("itemIndex", currentItemIndex);
+        animator.SetTrigger("showItem");
     }
 }
