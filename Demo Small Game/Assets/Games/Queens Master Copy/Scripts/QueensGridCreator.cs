@@ -5,14 +5,33 @@ using UnityEngine.UI;
 
 public class QueensGridCreator : MonoBehaviour
 {
+
+    public static QueensGridCreator Instance;
+
     public int gridSize = 8;
     public GameObject tilePrefab;
     public float padding = 5f;
     public RectTransform gridContainer;
+    public bool isAuto = false;
+
     private GridLayoutGroup layout;
 
     private int[,] regionMap;
     private bool[,] crownMap;
+
+
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private IEnumerator Start()
     {
@@ -21,6 +40,7 @@ public class QueensGridCreator : MonoBehaviour
 
         GenerateLevel();
         BuildGrid();
+        GamePlayManager.Instance.WinScore = gridSize;
     }
 
     void GenerateLevel()
@@ -149,8 +169,10 @@ public class QueensGridCreator : MonoBehaviour
         return true;
     }
 
-    public void BuildGrid()
+    // Old BuildGrid for reference
+    /*public void BuildGrid()
     {
+        GamePlayManager.Instance.crownSelections.Clear();
         foreach (Transform child in transform) { Destroy(child.gameObject); }
         float totalWidth = gridContainer.rect.width;
         float cellSize = (totalWidth - (padding * (gridSize - 1))) / gridSize;
@@ -163,21 +185,117 @@ public class QueensGridCreator : MonoBehaviour
             for (int c = 0; c < gridSize; c++)
             {
                 GameObject newTile = Instantiate(tilePrefab, transform);
+                newTile.name = "Tile_" + r + "_" + c;
                 DragSelection tileScript = newTile.GetComponent<DragSelection>();
+                tileScript.row = r;
+                tileScript.colomn = c;
                 int id = regionMap[r, c];
                 ImageData data = GamePlayManager.Instance.imageDatas[id % GamePlayManager.Instance.imageDatas.Count];
                 newTile.GetComponent<Image>().sprite = data.colorTile;
                 tileScript.crownSprite.sprite = data.crowTile;
                 tileScript.isCrown = crownMap[r, c];
+
+                // ADD THIS BLOCK HERE
+                if (tileScript.isCrown)
+                {
+                    GamePlayManager.Instance.crownSelections.Add(tileScript);
+                }
+            }
+        }
+    }*/
+    private DragSelection[,] allTileScripts;
+    // Inside QueensGridCreator.cs
+
+    // We need a way to find tiles by their position. 
+    // It is best to store them in a 2D array during BuildGrid.
+
+
+    public void BuildGrid()
+    {
+        // 1. Clear existing tiles and the Manager's crown list
+        foreach (Transform child in transform) { Destroy(child.gameObject); }
+        GamePlayManager.Instance.crownSelections.Clear();
+
+        // 2. Initialize the 2D array for the current grid size
+        allTileScripts = new DragSelection[gridSize, gridSize];
+
+        // 3. Calculate UI Sizing
+        float totalWidth = gridContainer.rect.width;
+        float cellSize = (totalWidth - (padding * (gridSize - 1))) / gridSize;
+
+        layout.cellSize = new Vector2(cellSize, cellSize);
+        layout.spacing = new Vector2(padding, padding);
+        layout.constraintCount = gridSize;
+
+        // 4. Generate the Grid
+        for (int r = 0; r < gridSize; r++)
+        {
+            for (int c = 0; c < gridSize; c++)
+            {
+                // Instantiate the tile
+                GameObject newTile = Instantiate(tilePrefab, transform);
+
+                // Set the name for Hierarchy organization
+                newTile.name = $"Tile_{r}_{c}";
+
+                // Get the script and assign coordinates
+                DragSelection tileScript = newTile.GetComponent<DragSelection>();
+                tileScript.row = r;
+                tileScript.colomn = c; // Using your spelling 'colomn'
+
+                // Store in our local 2D array for the Auto-Cross logic
+                allTileScripts[r, c] = tileScript;
+
+                // Setup Visuals and Logic from your Maps
+                int id = regionMap[r, c];
+
+                // Ensure ID is valid before accessing imageDatas
+                if (id != -1 && GamePlayManager.Instance.imageDatas.Count > 0)
+                {
+                    ImageData data = GamePlayManager.Instance.imageDatas[id % GamePlayManager.Instance.imageDatas.Count];
+
+                    newTile.GetComponent<Image>().sprite = data.colorTile;
+                    tileScript.crownSprite.sprite = data.crowTile;
+                }
+
+                // Assign if this tile is a "True Crown" (the hidden answer)
+                tileScript.isCrown = crownMap[r, c];
+
+                // If it is a crown, add it to the Manager's list for win checking
+                if (tileScript.isCrown)
+                {
+                    GamePlayManager.Instance.crownSelections.Add(tileScript);
+                }
+            }
+        }
+    }
+
+    // THE AUTO-CROSS LOGIC
+    public void SingedUPtheGrides(int crownR, int crownC)
+    {
+        if(!isAuto) return;
+        for (int r = 0; r < gridSize; r++)
+        {
+            for (int c = 0; c < gridSize; c++)
+            {
+                // Skip the tile where the actual crown was just placed
+                if (r == crownR && c == crownC) continue;
+
+                // Define the rules: same row, same column, or 8-way neighbors
+                bool sameRow = (r == crownR);
+                bool sameCol = (c == crownC);
+                bool isNeighbor = Mathf.Abs(r - crownR) <= 1 && Mathf.Abs(c - crownC) <= 1;
+
+                if (sameRow || sameCol || isNeighbor)
+                {
+                    // Access the specific tile
+                    DragSelection targetTile = allTileScripts[r, c];
+
+                    // Only mark it if it hasn't been revealed as a crown/red cross yet
+                    targetTile.AutoFillCross();
+                }
             }
         }
     }
 }
 
-
-/*
-
-  [HideInInspector] public Image crownSprite;
-    crownSprite = crownObject.GetComponent<Image>();
-
-*/

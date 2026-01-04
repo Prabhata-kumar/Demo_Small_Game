@@ -20,6 +20,8 @@ public class DragSelection : MonoBehaviour,
 
     private Image crossImage;
 
+    public int row, colomn;
+
     [HideInInspector] public Image crownSprite;
 
     private bool isSelected = false; // Cross visible
@@ -27,6 +29,7 @@ public class DragSelection : MonoBehaviour,
 
     private float lastClickTime = -1f;
     private float doubleClickThreshold = 0.3f;
+    private Image ownCOmponent;
 
     void Awake()
     {
@@ -39,6 +42,7 @@ public class DragSelection : MonoBehaviour,
 
         crossImage = crossObject.GetComponent<Image>();
         crownSprite = crownObject.GetComponent<Image>();
+        ownCOmponent = GetComponent<Image>();
 
         crossObject.SetActive(false);
         crownObject.SetActive(false);
@@ -115,6 +119,9 @@ public class DragSelection : MonoBehaviour,
         crossImage.color = redCross;
         crossObject.SetActive(true);
         crownObject.SetActive(false);
+       
+        GamePlayManager.Instance.LoosTheHeart();
+        ownCOmponent.raycastTarget = false;
     }
 
     void HideCross()
@@ -130,5 +137,20 @@ public class DragSelection : MonoBehaviour,
 
         crownObject.SetActive(true);
         crossObject.SetActive(false);
+
+        GamePlayManager.Instance.CardReavil();
+        ownCOmponent.raycastTarget = false;
+
+        QueensGridCreator.Instance.SingedUPtheGrides(row,colomn);
+    }
+
+    public void AutoFillCross()
+    {
+        // Don't auto-cross if the tile is already revealed (as a Crown or Red Cross)
+        // and don't overwrite if the player has already placed a crown there
+        if (!isRevealed)
+        {
+            ShowWhiteCross();
+        }
     }
 }
