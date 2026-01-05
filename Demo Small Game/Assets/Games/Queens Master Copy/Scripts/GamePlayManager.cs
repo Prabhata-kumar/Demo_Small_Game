@@ -7,10 +7,25 @@ public class GamePlayManager : MonoBehaviour
 {
 
     public static GamePlayManager Instance;
+
+    public List<ImageData> imageDatas;
+
     public int WinScore = 100;
     public int PlayerScore = 0;
     public LifeController lifeControllerManager;
     public List<DragSelection> crownSelections = new List<DragSelection>();
+
+   
+    public DragMode currentDragMode = DragMode.None;
+
+    // Add this in your GamePlayManager's Update to reset the drag
+    void Update()
+    {
+        if (Input.GetMouseButtonUp(0))
+        {
+            currentDragMode = DragMode.None;
+        }
+    }
 
     private void Awake()
     {
@@ -20,8 +35,7 @@ public class GamePlayManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    public List<ImageData> imageDatas;
-    
+   
     public bool IsGameOver()
     {
         if(PlayerScore == WinScore) return true;
@@ -69,5 +83,5 @@ public enum TileType
     NotSeleted = 0, // Default
     CrownSelected = 1, // Correctly selected
 }
-
+public enum DragMode { None, Drawing, Erasing }
 
