@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/ADDES/adds.unity
+    guid: 76e3e67fe6073854cbffb74da7d42573
+  - enabled: 1
     path: Assets/Games/Queens Master Copy/Scene/Queens Master.unity
     guid: 2f8f969d8fb5b124bb4034ec39e8a01c
   - enabled: 1
