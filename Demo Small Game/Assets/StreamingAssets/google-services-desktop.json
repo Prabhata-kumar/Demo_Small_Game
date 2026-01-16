@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "192973280589",
+    "firebase_url": "https://fir-leader-board-default-rtdb.firebaseio.com",
+    "project_id": "fir-leader-board",
+    "storage_bucket": "fir-leader-board.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:192973280589:android:2a54065a0505b6df825304",
+        "android_client_info": {
+          "package_name": "com.REALPLAYSTUDIOS.DemoSmallGame"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHfixZk_yq-Q0DdixlwnoUMH4oDgcqXsY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
