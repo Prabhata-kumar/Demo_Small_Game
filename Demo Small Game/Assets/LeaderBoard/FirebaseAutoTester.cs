@@ -4,100 +4,78 @@ using UnityEngine;
 using Firebase;
 using Firebase.Database;
 using Firebase.Extensions;
+using Unity.VisualScripting;
 
 public class FirebaseAutoTester : MonoBehaviour
 {
     private DatabaseReference dbReference;
-    private string[] names = { "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot" };
+    // These will now be used as the "Parent Names" (the keys) in the database
+    private string[] humanNames = { "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot" };
 
     void Start()
     {
-        // 1. Initialize Firebase
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task => {
             if (task.Result == DependencyStatus.Available)
             {
-                // IMPORTANT: Match the path in your image "Leader Board"
                 dbReference = FirebaseDatabase.DefaultInstance.GetReference("Leader Board");
-                Debug.Log("Firebase Ready. Starting Auto-Test...");
+                Debug.Log("Firebase Ready.");
 
-                StartCoroutine(AddRandomEntries(5));
-            }
-            else
-            {
-                Debug.LogError("Could not resolve dependencies: " + task.Result);
+                // Start the test
+                StartCoroutine(AddPlayersFromList());
             }
         });
     }
-
-    public void Update()
+    private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.F))
-        {
-            StartCoroutine(FetchLeaderBoardData());
-        }
-        else if(Input.GetKeyDown(KeyCode.C))
+        if(Input.GetKeyDown(KeyCode.Space))
         {
             ClearFullLeaderboard();
         }
-        else if(Input.GetKeyDown(KeyCode.D))
-        {
-            DeleteSpecificUser("some-user-id");
-        }
     }
 
-    IEnumerator AddRandomEntries(int count)
+    IEnumerator AddPlayersFromList()
     {
-        for (int i = 0; i < count; i++)
+        foreach (string name in humanNames)
         {
-            string randomName = "User " + i;
-            int randomScore = Random.Range(100, 1000);
+            // 1. Create the data object
+            PlayerEntry newPlayer = new PlayerEntry();
+            //newPlayer.userName = name;
+            newPlayer.score = Random.Range(100, 1000);
+            newPlayer.diamondCount = Random.Range(0, 50);
+            newPlayer.avatarIndex = Random.Range(1, 10);
 
-            // Create a simple dictionary to hold the data
-            Dictionary<string, object> entry = new Dictionary<string, object>();
-            entry["User Name"] = randomName;
-            entry["Scour"] = randomScore; // Matches the typo in your image
+            // 2. Convert to JSON
+            string json = JsonUtility.ToJson(newPlayer);
 
-            // Push creates a unique ID so they don't overwrite each other
-            dbReference.Push().UpdateChildrenAsync(entry).ContinueWithOnMainThread(task => {
-                if (task.IsCompleted)
-                {
-                    Debug.Log("Added: " + randomName);
-                }
+            // 3. Set the data using the human name as the Parent Key
+            // This replaces .Push() (random ID) with the actual name (Alpha, Bravo, etc.)
+            dbReference.Child(name).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task => {
+                if (task.IsCompleted) Debug.Log($"Successfully added: {name}");
             });
 
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(0.2f);
         }
     }
 
     public IEnumerator FetchLeaderBoardData()
     {
-        // 1. Get the data from the specific "Leader Board" path
         var task = dbReference.GetValueAsync();
         yield return new WaitUntil(() => task.IsCompleted);
 
-        if (task.IsFaulted)
-        {
-            Debug.LogError("Failed to fetch data: " + task.Exception);
-        }
-        else if (task.IsCompleted)
+        if (task.IsCompleted && !task.IsFaulted)
         {
             DataSnapshot snapshot = task.Result;
-
-            // 2. Loop through every child (User) in the Leader Board
-            foreach (DataSnapshot user in snapshot.Children)
+            foreach (DataSnapshot userSnap in snapshot.Children)
             {
-                // Using "Scour" to match your current database typo
-                string name = user.Child("User Name").Value.ToString();
-                string score = user.Child("Scour").Value.ToString();
-
-                Debug.Log($"Fetched - Name: {name}, Score: {score}");
+                // Pulling data back out using the new field names
+                string name = userSnap.Child("userName").Value.ToString();
+                string diamonds = userSnap.Child("diamondCount").Value.ToString();
+                Debug.Log($"Player: {name} | Diamonds: {diamonds}");
             }
         }
     }
-
     public void DeleteSpecificUser(string userId)
     {
-        // Path: Leader Board -> User 0 (or unique ID)
         dbReference.Child(userId).RemoveValueAsync().ContinueWithOnMainThread(task => {
             if (task.IsCompleted)
             {
@@ -105,11 +83,10 @@ public class FirebaseAutoTester : MonoBehaviour
             }
         });
     }
-
     public void ClearFullLeaderboard()
     {
-        // This deletes everything under "Leader Board"
         dbReference.RemoveValueAsync().ContinueWithOnMainThread(task => {
+
             if (task.IsCompleted)
             {
                 Debug.Log("Leaderboard cleared!");
@@ -118,17 +95,12 @@ public class FirebaseAutoTester : MonoBehaviour
     }
 }
 
+// Use a class instead of a Dictionary for better organization
 [System.Serializable]
-public class PlayerData
+public class PlayerEntry
 {
-    public string playerName;
+    public string userName;
     public int score;
-    public string PlayerID;
-
-    public PlayerData(string name, int s, string id)
-    {
-        playerName = name;
-        score = s;
-        PlayerID = id;
-    }
+    public int diamondCount;
+    public int avatarIndex;
 }
